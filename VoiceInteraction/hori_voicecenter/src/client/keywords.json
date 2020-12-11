@@ -1,0 +1,10 @@
+{
+	"keywords":
+    [
+        {"id":1,"keyword":"参观","voice_command.data":"canguan"},
+        {"id":2,"keyword":"医疗","voice_command.data":"guge"},
+        {"id":3,"keyword":"社会","voice_command.data":"shehui"},
+        {"id":4,"keyword":"复位","voice_command.data":"reset"},
+	    {"id":5,"keyword":"开始","voice_command.data":"start"}
+    ]
+}

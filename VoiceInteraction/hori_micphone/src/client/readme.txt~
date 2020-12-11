@@ -1,0 +1,67 @@
+A hori_centreClient guide book
+
+What is this?
+A class that helps you to publish centre::event messages to centre node and subscribe feedback messages from centre node.
+
+How to use it?
+Create a hori_centreClient object after your creation of ros::NodeHandle.
+The 4 parameter to pass into the constructor of the hori_centreClient object are as follows:
+1.std::string nodeName -> Make sure to pass in exact name of your node (same as the one in centreCfg.json) to the constructor of the hori_centreClient.
+2.ros::NodeHandle *nodeHandle -> the ros::NodeHandle pointer.
+3.void (* CallBackFun)(int eventID,void *p) -> Pass in a callback function pointer if you need a call when feedback message come,NULL if you don't need a callback.
+4.void *p -> parameter the same as the callback function's void *p.
+
+A example?
+Here is a simple example to use the client:
+
+//cpp code
+#include "ros/ros.h"
+#include "client/hori_centreClient.h"
+
+hori_centreClient *cC;
+
+void eventCall(int eve,void *p){// the callback function you want to use
+	ROS_INFO("get callback [%d]",eve);
+	(*((int *)p)) ++;
+	ROS_INFO("num [%d]",*((int *)p));
+}
+
+void *Thread(void *arg){
+    for(;;){
+		int ID = 0;
+		std::cout << "input ID to send" << std::endl;
+		std::cin >> ID;
+		if(ID == 666){exit(0);}
+		cC->pubToCenter(ID); //publish message to centre
+    }
+}
+
+int main(int argc, char **argv)
+{
+
+  ros::init(argc, argv, "hori_patrol");
+
+  ros::NodeHandle n;
+  int count = 0;
+
+  cC = new hori_centreClient("hori_patrol",&n,eventCall,&count); // create hori_centreClient object
+  ros::Rate loop_rate(1);
+
+  pthread_t pth;
+  int error = pthread_create(&pth,NULL,Thread,NULL);
+  if(error!=0)
+  {
+      ROS_INFO("pthread_create is not created ... ");
+      return 0;
+  }
+
+  while (ros::ok()){
+	ROS_INFO("check [%d]",cC->checkFeedBack()); // manually check what is the last message centre gives you
+	
+        ros::spinOnce();
+        loop_rate.sleep();
+  }
+
+  return 0;
+}
+//cpp code end

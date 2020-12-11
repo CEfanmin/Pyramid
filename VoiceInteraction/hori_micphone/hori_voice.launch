@@ -1,0 +1,5 @@
+<launch>
+
+<node name = "hori_micphone" pkg = "hori_micphone" type = "hori_micphone_node"/>
+
+</launch>

@@ -1,0 +1,250 @@
+/*
+ * Author: fanmin
+ * Date: 2016/07/28
+ * Function: 与中心节点结合后的语音中心节点
+*/
+#include <ros/ros.h>
+#include <geometry_msgs/Pose.h>
+#include <std_msgs/String.h>
+#include <std_msgs/UInt16.h>
+#include <fstream>
+
+#include <string>
+#include <stdlib.h>
+
+#include "client/hori_centreClient.h"
+#include <pthread.h>
+#include "client/voice_json.h"
+
+
+#define	BUFFER_SIZE	4096
+
+hori_centreClient *cC;
+
+/*
+ID	46 	接收中心＂暂停＂消息
+ID	48 	接收中心＂继续＂消息
+ID	47 	发给中心＂已暂停＂消息
+ID	49 	发给中心＂正常运行＂消息
+ID	50 	发给中心＂申请使用喇叭＂消息
+ID	51 	发给中心＂接收中心返回许可＂消息
+*/
+
+using namespace std;
+int chattinglib(char *input, char *output)
+{
+	std::string path = getenv("HOME");
+	path+="/catkin_ws/src/hori_voicecenter/chatting.txt";
+    ifstream in_file(path.c_str());
+
+    if (!in_file)
+     { cerr << "oops! unable to open input file\n"; return -1; }
+
+	string word;
+	string chat;
+	while (in_file >> word)
+	{
+		in_file >> chat;
+		if (char *str =strstr(input,word.c_str()))
+		{
+			cout <<"chat is:" << chat <<endl;;
+			memcpy(output,chat.c_str(),chat.size());
+		}
+		cC->pubToCenter(50);
+	}
+	return 0;
+}
+
+/* ros的回调函数 */
+bool wakeupFlg = false;
+bool recognitionFlg = false;
+char OUTX[BUFFER_SIZE]	= {'\0'};
+bool centercommand = true;
+void chatterCallback(const std_msgs::String::ConstPtr& msge)
+{
+	if (msge->data.length()!= 0 &&(centercommand == true))
+	{
+		printf("\ngive tatget position or start chatting...\n");
+		strcpy(OUTX,msge->data.c_str()); // 将订阅到的文字赋值给OUTX
+		wakeupFlg = true;
+		recognitionFlg = false;
+	}
+}
+bool apply_horn = false;
+void eventCall(int eve,void *p)
+{
+	ROS_INFO("get callback [%d]",eve);
+	if (eve == 46)
+	{
+		ROS_INFO("pause");
+		centercommand = false;
+		cC->pubToCenter(47);
+	}
+	if (eve == 48)
+	{
+		ROS_INFO("continue");
+		centercommand = true;
+		cC->pubToCenter(48);
+	}
+
+	if (eve ==51)
+	{
+		ROS_INFO("apply sucess!");
+		apply_horn = true;
+	}
+}
+void* spin_thread(void*)
+{
+	ros::spin();
+	return NULL;
+}
+
+
+/* 主函数入口 */
+int main(int argc, char **argv)
+{
+    ros::init(argc, argv, "hori_voicecenter");
+    ros::NodeHandle n;
+
+    ros::Subscriber sub = n.subscribe("/micphone_result",1, chatterCallback);
+
+    ros::Publisher chatter_pub = n.advertise<geometry_msgs::Pose>("/prmi/hori_control", 10);
+
+    ros::Publisher chatter_pub1 = n.advertise<std_msgs::String>("/voice_command", 1);
+    ros::Publisher chatter_pub2 = n.advertise<std_msgs::String>("/text_result", 10);
+
+    ros::Rate loop_rate(100);
+
+
+  	char pose[BUFFER_SIZE]	=	{'\0'};
+  	loaddata voicepoint;
+
+	printf("\n#######################################################\n");
+	printf("##                  	语音中心执行节点            ##\n");
+	printf("#######################################################\n\n");
+
+	cC = new hori_centreClient("hori_voicecenter",&n,eventCall,NULL);
+	cC->pubToCenter(49);
+	if (centercommand != true)
+	{
+		cC->pubToCenter(47);
+	}
+
+   pthread_t ros_spin_thread;
+   int error = pthread_create (&ros_spin_thread, NULL , spin_thread,NULL);
+
+
+while(ros::ok())
+{
+	if(wakeupFlg && (!recognitionFlg) && centercommand)
+	{
+		geometry_msgs::Pose targetPosition;
+		std_msgs::String voice_command;
+		std_msgs::String msg;
+
+		//人机对话
+	    char*outchat = new char[1000];
+	    memset(outchat,0,1000*sizeof(char));
+
+	    chattinglib(OUTX,outchat);     //检查chattinglib库
+
+	    string text (outchat);   //outchat中存放的是chat中的内容
+	    cC->pubToCenter(50);
+
+	    while(!apply_horn)
+	    {
+	    	loop_rate.sleep();
+	    }
+
+	    cC->pubToCenter(49);
+	    if (text.empty())
+	    {
+	    	text="warning";
+	    }
+	    std::cout << "text is: " << text  <<std::endl;
+		msg.data = text;
+		chatter_pub2.publish(msg);
+		apply_horn = false;
+
+		string inputx(OUTX);
+		std::cout << "input is:" << inputx << std::endl;
+		string outcommand;
+		voicepoint.load_cfgdata(inputx, outcommand);
+	    voice_command.data = outcommand;
+	    std::cout << "voice command is:" << voice_command.data<<std::endl;
+	    chatter_pub1.publish(voice_command);
+/*
+		//大屏接口
+		char *str0 =strstr(OUTX,"空调");
+		char *str1 =strstr(OUTX,"门口");
+		char *str2 =strstr(OUTX,"桌子");
+        //voice_command
+		char *str3 =strstr(OUTX,"参观");
+		char *str4 =strstr(OUTX,"医疗");
+		char *str5 =strstr(OUTX,"复位");
+		
+		if(str0 != NULL)
+		{
+			targetPosition.position.x=4;
+			targetPosition.position.y=-0.8;
+			targetPosition.position.z=0;
+			targetPosition.orientation.x = 0;
+			targetPosition.orientation.y = 0;
+			targetPosition.orientation.z = 0;
+			targetPosition.orientation.w = 0;
+			chatter_pub.publish(targetPosition);
+
+		}
+		if(str1 != NULL)
+		{
+			targetPosition.position.x=5;
+			targetPosition.position.y=-0.2;
+			targetPosition.position.z=0;
+			targetPosition.orientation.x = 0;
+			targetPosition.orientation.y = 0;
+			targetPosition.orientation.z = 0;
+			targetPosition.orientation.w = 0;
+
+			chatter_pub.publish(targetPosition);
+
+		}
+		if(str2 != NULL)
+		{
+			targetPosition.position.x=2.5;
+			targetPosition.position.y=-0.1;
+			targetPosition.position.z=0;
+			targetPosition.orientation.x = 0;
+			targetPosition.orientation.y = 0;
+			targetPosition.orientation.z = 0;
+			targetPosition.orientation.w = 0;
+
+			chatter_pub.publish(targetPosition);
+		}
+		if(str3 != NULL)
+		{
+			voice_command.data = "canguan";
+			chatter_pub1.publish(voice_command);
+		}
+		if(str4 != NULL)
+		{
+			voice_command.data = "guge";
+			chatter_pub1.publish(voice_command);
+		}
+		if(str5 != NULL)
+		{
+			voice_command.data = "reset";
+			chatter_pub1.publish(voice_command);
+		}
+		memset(OUTX, 0, BUFFER_SIZE);  //数组OUTX清零
+		wakeupFlg = false;
+		recognitionFlg = true;
+		delete[] outchat;    //清除堆
+*/
+		wakeupFlg = false;
+		recognitionFlg = true;
+		//delete []outcommand;
+	}
+
+	loop_rate.sleep();
+}
+}

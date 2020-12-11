@@ -1,2 +1,6 @@
 # Pyramid
-This room is my work at graduate school of UESTC.
+这个仓库是我在读研期间的工作，主要包括以下两个：
+
+1. 轮式导览机器人的人机对话系统
+2. 外骨骼机器人的云脑平台架构及其学习算法应用
+

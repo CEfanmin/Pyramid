@@ -1,0 +1,52 @@
+#include <string>
+#include <string.h>
+#include <iostream>
+#include <fstream>
+#include <stdlib.h>
+#include "json/json.h"
+using namespace std;
+class loadText
+{
+	public:
+	    void load_cfgText(string &input, string& output);
+};
+void loadText::load_cfgText(string &input, string& output)
+{
+	Json::Reader reader;
+  	Json::Value root;
+
+  	std::string path = getenv("HOME");
+  	path+="/centreCfg/subtitle.json";
+	ifstream myfile(path.c_str(), ios::binary);
+	if( !myfile.is_open() )
+	{
+	    cout << "Error opening file\n";
+	}
+
+    std::string filestr,tmp;
+    while (!myfile.eof() )
+    {
+        myfile >> tmp;
+        filestr += tmp;
+	}
+
+  	if (reader.parse(filestr, root))
+	{
+    	const Json::Value arrayObj = root["subtitleFile"];
+
+    	for (size_t i=0; i<arrayObj.size(); i++)
+		{
+     	    int id = arrayObj[i]["ID"].asInt();
+      	    string keyword = arrayObj[i]["details"].asString();
+      	    cout<< "keyword is:" << keyword <<endl;
+            const char* str = strstr(input.c_str(),keyword.c_str());
+        }
+  	}
+
+	else
+	{
+    	cout << "parse error" << endl;
+  	}
+
+    myfile.close();
+}

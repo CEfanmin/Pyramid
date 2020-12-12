@@ -1,0 +1,14 @@
+<launch>
+<!-- fanmin -->
+	<node name = "hori_horn" pkg="hori_horn" type = "hori_horn_node" />
+	<node name = "hori_rgbsource" pkg="hori_rgbsource" type ="hori_rgbsource_node"/>
+	<node name = "hori_micphone" pkg = "hori_micphone" type = "hori_micphone_node"/>
+	<!include file = "$(find openni_launch)/launch/openni.launch"/>
+	
+<!-- wangfukui -->
+	<!--node name = "openni2_node" pkg = "exprient" type = "openni2_node"/-->
+
+<!-- guozhenkai -->
+    <!--node name = "gzk" pkg = "gzk" type = "piexlface"/ -->
+
+</launch>

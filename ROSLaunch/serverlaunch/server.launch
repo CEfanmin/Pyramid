@@ -1,0 +1,14 @@
+<launch>
+<!-- niujingbo -->
+	<!--include file = "$(find centre)/centre.launch"/-->
+	<!--include file = "$(find guide)/guide.launch"/-->
+
+<!-- fanmin -->
+	<node name = "hori_voicecenter" pkg="hori_voicecenter" type = "hori_voicecenter_node"/>
+	<!--node name = "hori_xtionrgb" pkg="hori_xtionrgb" type ="hori_xtionrgb_node"/-->
+	<!--node name = "hori_webserver" pkg="hori_webserver" type ="hori_webserver_node"/-->
+	<!--include file = "$(find rosbridge_server)/launch/rosbridge_websocket.launch"/-->
+
+<!-- wangfukui -->
+
+</launch>

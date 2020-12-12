@@ -1,0 +1,24 @@
+#!/bin/bash
+source /etc/profile;
+
+function StartZP()
+{
+/bin/bash /home/cloudCenter/kafkaMessage/bin/zookeeper-server-start.sh /home/cloudCenter/kafkaMessage/config/zookeeper.properties
+}
+
+function StartKF()
+{
+/bin/bash /home/cloudCenter/kafkaMessage/bin/kafka-server-start.sh /home/cloudCenter/kafkaMessage/config/server.properties
+}
+case $1 in
+    startzookeeper)
+        StartZP
+        ;;
+    startserver)
+        StartKF
+        ;;
+    *)
+        echo "Usage: `basename $0` {startzookeeper|startserver}"
+        ;;
+esac
+

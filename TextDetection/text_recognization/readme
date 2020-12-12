@@ -1,0 +1,2 @@
+文本检测，使用之前先打开xtion 
+roslaunch openni2_launch openni2.launch

@@ -1,0 +1,42 @@
+body{
+	border:0px solid no;  
+	width:100%;
+	height:100%;
+     margin:0px 0px;  
+}
+
+
+.classPosition1{
+	width:320px;
+	height:50px;
+	float:left;
+	background:no;
+	font-size:14px;
+}
+
+.classPosition2{
+	width:100%;
+	height:100%;
+	background:no;
+	text-align:center;
+	margin:0 auto;
+
+}
+
+.classPosition2 img{
+	width:1000px;
+	height:120px;
+	vertical-align:middle;
+}
+
+
+#positionFixedTest1{
+	position:fixed;
+	left:3%;
+	top:20px;
+}
+
+#positionFixedTest2{
+	position:fixed;
+	top:20px;
+}
